@@ -1,2 +1,6 @@
+# Agent
 skills-lock.json
 .agents/
+
+# Temp
+.venv/
