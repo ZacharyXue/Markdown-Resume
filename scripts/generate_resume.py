@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Convert Resume.md to Resume.html with built-in PDF export functionality."""
+"""Convert Resume.md to Resume.html."""
 
 import re
 import sys
@@ -11,41 +11,6 @@ PROJECT_DIR = Path(__file__).resolve().parent.parent
 RESUME_MD = PROJECT_DIR / "Resume.md"
 RESUME_HTML = PROJECT_DIR / "Resume.html"
 CSS_FILE = PROJECT_DIR / "resume.css"
-
-PDF_BUTTON_JS = r"""
-function exportPDF() {
-    window.print();
-}
-"""
-
-PDF_BUTTON_CSS = r"""
-.pdf-export-btn {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    z-index: 9999;
-    padding: 10px 20px;
-    background: #1a73e8;
-    color: #ffffff;
-    border: none;
-    border-radius: 6px;
-    font-size: 15px;
-    font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    transition: background 0.2s, box-shadow 0.2s;
-}
-.pdf-export-btn:hover {
-    background: #1557b0;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-}
-@media print {
-    .pdf-export-btn {
-        display: none !important;
-    }
-}
-"""
-
 TEMPLATE = """<!doctype html>
 <html lang="zh-CN">
 <head>
@@ -59,15 +24,8 @@ TEMPLATE = """<!doctype html>
 <style>
 {resume_css}
 </style>
-<style>
-{pdf_btn_css}
-</style>
 </head>
 <body class="typora-export os-windows">
-<button class="pdf-export-btn" onclick="exportPDF()">导出 PDF</button>
-<script>
-{pdf_btn_js}
-</script>
 <div id="write" class="is-node">
 {content}
 </div>
@@ -192,8 +150,6 @@ ul, ol {
         fonts=google_fonts,
         base_css=base_css,
         resume_css=resume_css,
-        pdf_btn_css=PDF_BUTTON_CSS,
-        pdf_btn_js=PDF_BUTTON_JS,
         content=html_body,
     )
 

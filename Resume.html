@@ -507,45 +507,8 @@ footer {
     border-color: #e5e5e5;
 }
 </style>
-<style>
-
-.pdf-export-btn {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    z-index: 9999;
-    padding: 10px 20px;
-    background: #1a73e8;
-    color: #ffffff;
-    border: none;
-    border-radius: 6px;
-    font-size: 15px;
-    font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    transition: background 0.2s, box-shadow 0.2s;
-}
-.pdf-export-btn:hover {
-    background: #1557b0;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-}
-@media print {
-    .pdf-export-btn {
-        display: none !important;
-    }
-}
-
-</style>
 </head>
 <body class="typora-export os-windows">
-<button class="pdf-export-btn" onclick="exportPDF()">导出 PDF</button>
-<script>
-
-function exportPDF() {
-    window.print();
-}
-
-</script>
 <div id="write" class="is-node">
 <div style="text-align:center">
     <h1>薛子皓</h1>
@@ -568,6 +531,8 @@ function exportPDF() {
 <li>求职意向：测试开发工程师</li>
 <li>工作经验：3 年</li>
 </ul>
+<h2><img src="assets/info-circle-solid.svg" width="30px"> 个人总结</h2>
+<p>3 年测试开发经验，专注测试平台搭建与 CI/CD 流水线建设。具备从 AI 模型部署到自动化测试框架、再到测试集群运维的全链路能力。学习能力强，善于在新技术领域快速上手并推动落地，胜任跨团队协作与工具链建设。</p>
 <h2><img src="assets/graduation-cap-solid.svg" width="30px"> 教育经历</h2>
 <ul>
 <li>硕士，早稻田大学，Information, Production and System，2021.4~2023.4<ul>
@@ -657,11 +622,8 @@ function exportPDF() {
 </ul>
 <h2><img src="assets/tools-solid.svg" width="30px"> 技能清单</h2>
 <ul>
-<li>★★★ Python</li>
-<li>★★☆ GitLab CI/CD</li>
-<li>★☆☆ Go</li>
-<li>★★★ Linux</li>
-<li>★★☆ AI</li>
+<li>语言：Python、Go、C++</li>
+<li>工具/平台：GitLab CI/CD、Kubernetes、Linux、Docker</li>
 </ul>
 </div>
 </body>
