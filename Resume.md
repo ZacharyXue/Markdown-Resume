@@ -17,7 +17,6 @@
 
 - 求职意向：测试开发工程师
 - 工作经验：3 年
-- 博客：https://zacharyxue.github.io
 
 ## <img src="assets/info-circle-solid.svg" width="30px"> 个人总结
 
