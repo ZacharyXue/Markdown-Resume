@@ -101,11 +101,7 @@ def generate() -> None:
 
     resume_css = load_css(CSS_FILE) if CSS_FILE.exists() else ""
 
-    google_fonts = (
-        '<link href="https://fonts.loli.net/css'
-        '?family=Open+Sans:400italic,700italic,700,400'
-        '&subset=latin,latin-ext" rel="stylesheet" type="text/css">'
-    )
+    google_fonts = ""
 
     base_css = """html {
     overflow-x: initial !important;
