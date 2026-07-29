@@ -542,43 +542,54 @@ footer {
 <li>
 <p><strong>字节跳动 · AI 工具链 · 测试开发工程师</strong>（2024.11~至今）</p>
 <ul>
-<li>作为 GitLab CI 集群 Owner，运维 100+ 节点、15000 CPU 的测试集群，独立开发仓库权限管理、消息通知、全量日志等工具</li>
-<li>推动自研芯片审核业务从 0 到 1 落地：覆盖 30+ 模型，搭建端到端性能和 Diff 测试框架，部署流程由 30 分钟优化至 5 分钟</li>
-<li>开发 CI Job 失败自动定位 Agent，采集 Pod 状态/日志/进程上下文，调用 LLM 分析根因，环境类问题准确率 90%+</li>
-<li>为 GitLab Runner 开发 K8s WebShell 功能，支撑 200+ 用户在线调试，替代本地复现方式</li>
-<li>主导 5 条测试流水线从 BD 系统迁移至 GitLab CI，解决环境耦合，自维护 CPU 和自研芯片双集群</li>
+<li>负责 GitLab CI 集群运维、自研芯片审核业务测试、CI/CD 工具链开发</li>
 </ul>
 </li>
 <li>
 <p><strong>华为技术有限公司 · 计算产品线 · 测试工程师</strong>（2023.5~2024.10）</p>
 <ul>
-<li>作为子特性版本负责人，带领 5 人团队交付存储服务器特性，自动化覆盖率 80%，累计交付 70+ 新需求</li>
-<li>参与 openEuler 补丁回合及 BIOS Core 调频开发</li>
+<li>负责存储服务器特性测试交付，带领 5 人团队</li>
 </ul>
 </li>
 <li>
 <p><strong>美的集团 · 项目实习生</strong>（2021.9~2021.12）</p>
 <ul>
-<li>基于 TI IWR6843 毫米波芯片开发睡眠检测功能：呼吸率、心率、在床/离床检测</li>
+<li>基于毫米波芯片开发睡眠检测功能</li>
 </ul>
 </li>
 </ul>
 <h2><img src="assets/project-diagram-solid.svg" width="30px"> 项目经历</h2>
 <ul>
 <li>
-<p><strong>基于 LLM 的 CI 故障定位 Agent</strong>（2026.5~至今）</p>
-<p><em>Go, GitLab CI, 豆包 API</em></p>
-<p>在 GitLab Runner 中嵌入 Agent，Failed Job 触发时自动采集 Pod 状态、日志、进程等上下文，调用 LLM 分析并初步定位根因。</p>
+<p><strong>GitLab CI/CD 平台建设</strong>（2025.9~至今）</p>
+<p><em>GitLab CI, Kubernetes, Go, Python</em></p>
+<p>从 0 搭建并运维 100+ 节点、15000 CPU 的 GitLab CI 集群，服务 200+ 开发者。主要工作：</p>
+<ul>
+<li>主导 5 条测试流水线从 BD 系统迁移至 GitLab CI，用 Redis 替代跨 Job 环境变量、火山云 TOS 替换 BD TOS，解决历史环境耦合问题</li>
+<li>开发 GitLab 仓库权限管理、强合、飞书消息通知、全量日志等二次开发工具</li>
+<li>为 GitLab Runner 开发 K8s WebShell，通过 Proxy + CLB 将浏览器命令反向代理到 Runner Pod，替代此前本地复现的定位方式，支撑 200+ 用户在线调试</li>
+<li>开发 CI Job 失败自动定位 Agent，采集 Pod 状态/日志/进程上下文，调用 LLM 分析根因，环境类问题准确率 90%+，显著缩短故障排查时间</li>
+</ul>
 </li>
 <li>
-<p><strong>GitLab CI 集群 WebShell</strong>（2026.1~2026.3）</p>
-<p><em>Python, Go, Kubernetes</em></p>
-<p>为 K8s 下的 GitLab Runner 开发 WebShell，通过 Proxy + CLB 方案将在浏览器中执行的命令反向代理到 Runner Pod，替代本地复现的定位方式。</p>
+<p><strong>自研芯片审核业务测试</strong>（2024.11~2025.6）</p>
+<p><em>Python, C++, Linux, 多 AI 框架</em></p>
+<p>从 0 到 1 搭建自研芯片审核业务测试体系。主要工作：</p>
+<ul>
+<li>维护并增强模型精度测试工具，搭建端到端性能测试框架，支撑 30+ 审核模型</li>
+<li>引入 Diff 测试弥补多框架（PyTorch/TensorFlow/自研框架）下的测试缺口</li>
+<li>开发自动部署工具，将单次部署流程从 30 分钟缩短至 5 分钟</li>
+<li>推动审核业务 2k+ 卡、ViT 5k+ 卡在自研芯片上大规模部署</li>
+</ul>
 </li>
 <li>
-<p><strong>XX 集成验证测试</strong>（2023.9~2024.2）</p>
+<p><strong>存储服务器特性测试</strong>（2023.9~2024.2）</p>
 <p><em>Python, Linux, RDMA</em></p>
-<p>设计测试策略与用例，带领 4 人团队开展手工+自动化测试，完成大规格仿真、性能、兼容性、长稳测试。</p>
+<ul>
+<li>设计测试策略与用例，规划测试组网与节奏，组织大规模仿真、性能、兼容性、长稳测试</li>
+<li>带领 4 人团队基于内部自研框架编写自动化脚本，自动化覆盖率达 80%，累计交付新需求 70+</li>
+<li>参与 openEuler 补丁回合及 BIOS Core 调频开发</li>
+</ul>
 </li>
 </ul>
 <h2><img src="assets/tools-solid.svg" width="30px"> 技能清单</h2>
