@@ -69,6 +69,10 @@ a {
 
 /* for resume --> */
 
+strong, b, h1, h2, h3, h4 {
+    font-weight: 700 !important;
+}
+
 :root {
     --side-bar-bg-color: #fafafa;
     --control-text-color: #777;
