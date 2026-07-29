@@ -20,7 +20,7 @@
 
 ## <img src="assets/info-circle-solid.svg" width="30px"> 个人总结
 
-3 年测开，专注 CI/CD 基础设施与 K8s 集群运维。主导过 100+ 节点、15000 核 GitLab CI 集群建设，具备从 AI 模型部署到自动化测试的全链路能力。擅长用 Python/Go 开发自动化工具提效，带过 5 人测试团队。
+3 年测开，专注 CI/CD 基础设施与 K8s 集群运维。主导过 100+ 节点、15000 核 GitLab CI 集群建设，具备从 AI 模型部署到自动化测试的全链路能力。擅长用 Python/Go 开发自动化工具提效，带过 4 人测试团队。
 
 ## <img src="assets/graduation-cap-solid.svg" width="30px"> 教育经历
 
@@ -33,7 +33,7 @@
   - 负责 GitLab CI 集群运维、自研芯片审核业务测试、CI/CD 工具链开发
 
 - **华为技术有限公司 · 计算产品线 · 测试工程师**（2023.5~2024.10）
-  - 负责存储服务器特性测试交付，带领 5 人团队，参与 openEuler 补丁回合
+  - 负责存储服务器特性测试交付，带领 4 人团队，参与 openEuler 补丁回合
 
 ## <img src="assets/project-diagram-solid.svg" width="30px"> 项目经历
 
