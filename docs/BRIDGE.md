@@ -1,60 +1,87 @@
 # 工作流程指南
 
-本文档用于引导 Agent 完成从 Markdown 到 HTML 的简历生成。
+本文档用于引导 Agent 完成从 Markdown 到 HTML/PDF 的简历生成。
 
 ## 架构概览
 
 ```
 Resume.md ──(scripts/generate_resume.py)──> Resume.html
-                  │
-           resume.css (样式)
-           assets/   (SVG 图标)
+                  │                              │
+           resume.css (样式)              ┌──────┴──────┐
+           assets/   (SVG 图标)           │  两种 PDF 导出 │
+                                          │ weasyprint   │
+                                          │ Chrome/Chromium│
+                                          └─────────────┘
 ```
 
 ## Agent 工作流
 
-### 1. 理解源文件
+### 1. 编辑内容
 
-- **`Resume.md`** — 唯一需要编辑的内容文件。使用 Markdown 撰写，包含中文简历内容。
-- **`resume.css`** — 简历专用样式表，兼容 Typora 和 Python 脚本。
-- **`assets/`** — Markdown 中通过 `<img>` 标签引用的 SVG 图标。
-
-### 2. 编辑内容
-
-直接修改 `Resume.md`，遵循以下约定：
-- 使用 `<center>` 包裹头部信息（姓名、联系方式）
-- 二级标题搭配 SVG 图标引入各段落
+直接修改 `Resume.md`。遵循以下约定：
+- 使用 `<center>` 包裹头部信息
+- 二级标题搭配 SVG 图标：`## <img src="assets/xxx.svg" width="30px"> 标题`
+- 加粗使用 Markdown 语法 `**文字**`
 - 嵌套列表使用 4 空格缩进
-- 技能清单使用 ★ 评级
 
-### 3. 构建 HTML
+### 2. 构建 HTML
 
 ```bash
 python scripts/generate_resume.py
 ```
 
-**依赖：** `markdown` Python 包（`pip install markdown`）
+依赖：`pip install markdown`
 
-**脚本做了什么：**
-1. 读取 `Resume.md` 并预处理（标准化列表缩进、处理 `<center>` 标签）
-2. 使用 `markdown` 库（extensions: `extra`, `sane_lists`）转换为 HTML
-3. 读取 `resume.css`，过滤 `@include-when-export` 指令
-4. 组合内联样式、Google Fonts 和 HTML 内容，写入 `Resume.html`
+### 3. 导出 PDF
 
-### 4. 验证
+**方案一（推荐）：Chrome/Chromium 无头模式** — 加粗渲染正常，CJK 字体完整
 
-构建完成后，可以用浏览器打开 `Resume.html` 检查效果。
+```python
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+import base64
 
-### 5. 导出 PDF（浏览器打印）
+svc = Service(executable_path='/home/xzh/chromedriver/chromedriver')
+opts = Options()
+opts.add_argument('--headless=new')
+opts.add_argument('--no-sandbox')
+drv = webdriver.Chrome(service=svc, options=opts)
+drv.get('file:///home/xzh/Markdown-Resume/Resume.html')
+pdf = drv.execute_cdp_cmd('Page.printToPDF', {
+    'printBackground': True,
+    'paperWidth': 8.27, 'paperHeight': 11.69,
+    'marginTop': 0.4, 'marginBottom': 0.4,
+})
+with open('Resume.pdf', 'wb') as f:
+    f.write(base64.b64decode(pdf['data']))
+drv.quit()
+```
 
-浏览器原生支持 HTML 转 PDF：
-- 用浏览器打开 `Resume.html`
-- `Ctrl+P` (或 `Cmd+P`) 打开打印对话框
-- 目标选择"另存为 PDF"
-- 建议去除页眉页脚，边距设为"无"
+需要：`chromedriver`（已安装在 `/home/xzh/chromedriver/`）+ `pip install selenium`
+
+**方案二：weasyprint** — 简单但 CJK 加粗渲染有问题
+
+```bash
+pip install weasyprint
+python -c "import weasyprint; weasyprint.HTML('Resume.html').write_pdf('Resume.pdf')"
+```
+
+**问题**：系统缺少 CJK 粗体字体（如 WQY Zen Hei 只有 Regular），中文加粗不显示。
+
+## PDF 渲染排坑记录
+
+| 问题 | 原因 | 解决 |
+|------|------|------|
+| 图标过大 | 仅 `h2 img` 有 CSS 限制，其他上下文图标未约束 | 为 `h1/h2/h3/p/div img` 统一加 `width` 限制 |
+| 中文加粗无效 | weasyprint + 系统无 CJK Bold 字体 | ① 换 Chrome 导出；② 或 `text-shadow` 模拟 |
+| 字体缺失报错 | `@font-face` 引用的 `./github/*.woff` 不存在 | 删除无效 `@font-face` 和 Google Fonts 链接 |
+| Chrome 未安装 | WSL2 snap 限制 | 用系统已有的 `/home/xzh/chromedriver/chromedriver` |
 
 ## 关键约定
 
-- **不要直接编辑 `Resume.html`** — 它由 `Resume.md` 生成。
-- **不要通过工具的方式生成 PDF** — 浏览器打印已足够。
-- 每次修改 `Resume.md` 后，运行构建脚本更新 `Resume.html`。
+- **不要直接编辑 `Resume.html`** — 它由脚本生成
+- 修改 MD 后重新构建 HTML + PDF
+- 修改只 commit 不 push，确认后手动推送分支
+- `<center>` 标签会被脚本转为 `<div style="text-align:center">`
+- CSS 中 `@include-when-export` 会被脚本自动过滤
