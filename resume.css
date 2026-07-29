@@ -71,6 +71,8 @@ a {
 
 strong, b, h1, h2, h3, h4 {
     font-weight: 700 !important;
+    /* Simulate bold when bold font variant is unavailable */
+    text-shadow: 0.3px 0 0 currentColor;
 }
 
 :root {
