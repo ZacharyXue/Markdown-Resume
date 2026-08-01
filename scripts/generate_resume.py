@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 """Convert Resume.md to Resume.html.
 
-Reads real resume from ~/.local/resume/Resume.md by default.
-Set RESUME_PATH env var to override.
+Source priority:
+  1. dist/Resume.md       ← primary editing target (gitignored, in-project)
+  2. ~/.local/resume/Resume.md  ← git-versioned backup (auto-copied to dist on first run)
+  3. Resume.example.md    ← public template (fallback for testing)
+
+Set RESUME_PATH env var to override all auto-detection.
 Outputs to dist/ directory.
 """
 
@@ -21,12 +25,21 @@ RESUME_PATH = os.environ.get("RESUME_PATH")
 if RESUME_PATH:
     RESUME_MD = Path(RESUME_PATH)
 else:
+    dist_resume = DIST_DIR / "Resume.md"
     local_resume = Path.home() / ".local" / "resume" / "Resume.md"
-    if local_resume.exists():
+
+    if dist_resume.exists():
+        RESUME_MD = dist_resume
+    elif local_resume.exists():
         RESUME_MD = local_resume
+        # Bootstrap: copy from ~/.local/resume/ to dist/ for future editing
+        DIST_DIR.mkdir(exist_ok=True)
+        dist_resume.write_text(local_resume.read_text(encoding="utf-8"))
+        print(f"📋 Bootstrapped dist/Resume.md from ~/.local/resume/")
+        print(f"   → Edit dist/Resume.md directly from now on")
     else:
-        # Fallback to project root (for development with example)
-        RESUME_MD = PROJECT_DIR / "Resume.md"
+        # Fallback to example template (for development/testing)
+        RESUME_MD = PROJECT_DIR / "Resume.example.md"
 
 CSS_FILE = PROJECT_DIR / "resume.css"
 
@@ -176,12 +189,13 @@ ul, ol {
     resume_html = DIST_DIR / "Resume.html"
     resume_html.write_text(output, encoding="utf-8")
 
-    # Also copy the source markdown to dist for reference
-    resume_md_copy = DIST_DIR / "Resume.md"
-    resume_md_copy.write_text(RESUME_MD.read_text(encoding="utf-8"))
+    # Copy source markdown to dist if it came from outside
+    if RESUME_MD.parent != DIST_DIR:
+        resume_md_copy = DIST_DIR / "Resume.md"
+        resume_md_copy.write_text(RESUME_MD.read_text(encoding="utf-8"))
+        print(f"✓ Copied source to {resume_md_copy}")
 
     print(f"✓ Generated {resume_html}")
-    print(f"✓ Copied source to {resume_md_copy}")
 
 
 if __name__ == "__main__":
