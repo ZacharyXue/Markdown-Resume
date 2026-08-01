@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
-"""Convert Resume.md to Resume.html."""
+"""Convert Resume.md to Resume.html.
 
+Reads real resume from ~/.local/resume/Resume.md by default.
+Set RESUME_PATH env var to override.
+Outputs to dist/ directory.
+"""
+
+import os
 import re
 import sys
 from pathlib import Path
@@ -8,9 +14,22 @@ from markdown import markdown
 
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
-RESUME_MD = PROJECT_DIR / "Resume.md"
-RESUME_HTML = PROJECT_DIR / "Resume.html"
+DIST_DIR = PROJECT_DIR / "dist"
+
+# --- Locate the real resume ---
+RESUME_PATH = os.environ.get("RESUME_PATH")
+if RESUME_PATH:
+    RESUME_MD = Path(RESUME_PATH)
+else:
+    local_resume = Path.home() / ".local" / "resume" / "Resume.md"
+    if local_resume.exists():
+        RESUME_MD = local_resume
+    else:
+        # Fallback to project root (for development with example)
+        RESUME_MD = PROJECT_DIR / "Resume.md"
+
 CSS_FILE = PROJECT_DIR / "resume.css"
+
 TEMPLATE = """<!doctype html>
 <html lang="zh-CN">
 <head>
@@ -71,11 +90,8 @@ def preprocess_md(text: str) -> str:
             line = "    " + stripped
 
         # Insert blank line before sub-list that follows non-list text
-        # Pattern: previous non-empty line is indented text (not list),
-        # current line is an indented list item
         if is_list_item and indent >= 4 and result:
             prev_line = result[-1]
-            # If previous line is not blank and not a list item, add blank line
             if prev_line.strip() and not re.match(r"^\s*(?:-|\d+\.)\s", prev_line) and prev_line.strip():
                 result.append("")
 
@@ -85,10 +101,17 @@ def preprocess_md(text: str) -> str:
 
 
 def generate() -> None:
-    """Read Resume.md, convert to HTML, and write Resume.html."""
+    """Read Resume.md, convert to HTML, and write to dist/Resume.html."""
 
     if not RESUME_MD.exists():
-        sys.exit(f"ERROR: {RESUME_MD} not found.")
+        print(f"ERROR: Resume not found at {RESUME_MD}")
+        print("Options:")
+        print("  1. Create ~/.local/resume/Resume.md with your real resume")
+        print("  2. Set RESUME_PATH=/path/to/your/Resume.md")
+        print("  3. Copy Resume.example.md to Resume.md for testing")
+        sys.exit(1)
+
+    print(f"Using resume: {RESUME_MD}")
 
     md_content = RESUME_MD.read_text(encoding="utf-8")
     md_content = preprocess_md(md_content)
@@ -149,8 +172,16 @@ ul, ol {
         content=html_body,
     )
 
-    RESUME_HTML.write_text(output, encoding="utf-8")
-    print(f"Generated {RESUME_HTML}")
+    DIST_DIR.mkdir(exist_ok=True)
+    resume_html = DIST_DIR / "Resume.html"
+    resume_html.write_text(output, encoding="utf-8")
+
+    # Also copy the source markdown to dist for reference
+    resume_md_copy = DIST_DIR / "Resume.md"
+    resume_md_copy.write_text(RESUME_MD.read_text(encoding="utf-8"))
+
+    print(f"✓ Generated {resume_html}")
+    print(f"✓ Copied source to {resume_md_copy}")
 
 
 if __name__ == "__main__":

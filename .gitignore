@@ -2,5 +2,15 @@
 skills-lock.json
 .agents/
 
+# Real resume (private, managed in ~/.local/resume/)
+Resume.md
+Resume.html
+Resume.pdf
+Resume.png
+Resume_chrome.pdf
+
+# Generated output
+dist/
+
 # Temp
 .venv/
