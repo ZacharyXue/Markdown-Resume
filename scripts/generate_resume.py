@@ -1,47 +1,30 @@
 #!/usr/bin/env python3
-"""Convert Resume.md to Resume.html.
+"""Convert Resume.md to Resume.html with composable project selection.
 
-Source priority:
-  1. dist/Resume.md       ← primary editing target (gitignored, in-project)
-  2. ~/.local/resume/Resume.md  ← git-versioned backup (auto-copied to dist on first run)
-  3. Resume.example.md    ← public template (fallback for testing)
+Architecture (new split mode):
+  dist/resume-base.md       ← header, personal info, summary, education, work, skills
+  dist/projects/*.md         ← individual project entries (one file per project)
+  dist/Resume.html           ← generated output
 
-Set RESUME_PATH env var to override all auto-detection.
-Outputs to dist/ directory.
+Backward compatible: if dist/resume-base.md doesn't exist, falls back to the
+old single-file dist/Resume.md (or ~/.local/resume/Resume.md).
+
+Usage:
+  python scripts/generate_resume.py                           # all projects
+  python scripts/generate_resume.py --list-projects           # list available projects
+  python scripts/generate_resume.py --projects gitlab-ci,chip # selected projects only
 """
 
+import argparse
 import os
 import re
 import sys
 from pathlib import Path
 from markdown import markdown
 
-
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 DIST_DIR = PROJECT_DIR / "dist"
-
-# --- Locate the real resume ---
-RESUME_PATH = os.environ.get("RESUME_PATH")
-if RESUME_PATH:
-    RESUME_MD = Path(RESUME_PATH)
-else:
-    dist_resume = DIST_DIR / "Resume.md"
-    local_resume = Path.home() / ".local" / "resume" / "Resume.md"
-
-    if dist_resume.exists():
-        RESUME_MD = dist_resume
-    elif local_resume.exists():
-        RESUME_MD = local_resume
-        # Bootstrap: copy from ~/.local/resume/ to dist/ for future editing
-        DIST_DIR.mkdir(exist_ok=True)
-        dist_resume.write_text(local_resume.read_text(encoding="utf-8"))
-        print(f"📋 Bootstrapped dist/Resume.md from ~/.local/resume/")
-        print(f"   → Edit dist/Resume.md directly from now on")
-    else:
-        # Fallback to example template (for development/testing)
-        RESUME_MD = PROJECT_DIR / "Resume.example.md"
-
-CSS_FILE = PROJECT_DIR / "resume.css"
+PROJECTS_DIR = DIST_DIR / "projects"
 
 TEMPLATE = """<!doctype html>
 <html lang="zh-CN">
@@ -78,13 +61,7 @@ def load_css(css_path: Path) -> str:
 
 
 def preprocess_md(text: str) -> str:
-    """Normalize markdown for Python-Markdown library.
-
-    Handles:
-    1. <center> → <div style="text-align:center"> (avoids <p> wrapping)
-    2. 2-space nested lists → 4-space (standard markdown nesting)
-    3. Inserts blank lines before sub-lists that follow paragraph text
-    """
+    """Normalize markdown for Python-Markdown library."""
     text = text.replace("<center>", '<div style="text-align:center">')
     text = text.replace("</center>", "</div>")
 
@@ -94,15 +71,11 @@ def preprocess_md(text: str) -> str:
     for i, line in enumerate(lines):
         stripped = line.lstrip()
         indent = len(line) - len(stripped)
-
-        # Track list context: a line starting with "- " or indented "- "
         is_list_item = bool(re.match(r"^\s*-\s", line)) and stripped.startswith("- ")
 
-        # Convert 2-space indented list items (not starting at column 0) to 4-space
         if is_list_item and 0 < indent < 4:
             line = "    " + stripped
 
-        # Insert blank line before sub-list that follows non-list text
         if is_list_item and indent >= 4 and result:
             prev_line = result[-1]
             if prev_line.strip() and not re.match(r"^\s*(?:-|\d+\.)\s", prev_line) and prev_line.strip():
@@ -113,20 +86,131 @@ def preprocess_md(text: str) -> str:
     return "\n".join(result)
 
 
-def generate() -> None:
-    """Read Resume.md, convert to HTML, and write to dist/Resume.html."""
+def list_projects() -> list[Path]:
+    """Return sorted list of available project .md files."""
+    if not PROJECTS_DIR.exists():
+        return []
+    return sorted(PROJECTS_DIR.glob("*.md"))
 
-    if not RESUME_MD.exists():
-        print(f"ERROR: Resume not found at {RESUME_MD}")
+
+def get_project_title(project_path: Path) -> str:
+    """Extract project title from the first line of a project .md file."""
+    first_line = project_path.read_text(encoding="utf-8").splitlines()[0].strip()
+    # Strip leading "- **" and trailing "**（...）"
+    match = re.match(r"^- \*\*(.+?)\*\*", first_line)
+    if match:
+        return match.group(1)
+    return first_line
+
+
+def assemble_resume(base_path: Path, project_slugs: list[str]) -> str:
+    """Assemble full resume from base + selected projects."""
+    base_content = base_path.read_text(encoding="utf-8")
+
+    # Build project section content
+    project_section = []
+    available = {p.stem: p for p in list_projects()}
+
+    for slug in project_slugs:
+        proj_path = available.get(slug)
+        if proj_path:
+            project_section.append(proj_path.read_text(encoding="utf-8").rstrip())
+
+    # Replace <!-- PROJECTS --> marker with project content
+    # If all selected, also show which were included in verbose mode
+    assembled = base_content.replace("<!-- PROJECTS -->", "\n\n".join(project_section))
+
+    return assembled
+
+
+def locate_base_md() -> Path | None:
+    """Locate the base resume markdown file.
+
+    Priority:
+      1. RESUME_PATH env var (for old-style single file)
+      2. dist/resume-base.md (new split mode)
+      3. dist/Resume.md (old single-file mode, backward compat)
+      4. ~/.local/resume/Resume.md (old backup mode)
+      5. Resume.example.md (fallback)
+    """
+    env_path = os.environ.get("RESUME_PATH")
+    if env_path:
+        return Path(env_path)
+
+    # New split mode
+    base = DIST_DIR / "resume-base.md"
+    if base.exists():
+        return base
+
+    # Old single-file mode
+    old = DIST_DIR / "Resume.md"
+    if old.exists():
+        return old
+
+    # Old backup mode
+    local = Path.home() / ".local" / "resume" / "Resume.md"
+    if local.exists():
+        DIST_DIR.mkdir(exist_ok=True)
+        old.write_text(local.read_text(encoding="utf-8"))
+        print(f"Bootstrapped dist/Resume.md from ~/.local/resume/")
+        return old
+
+    # Fallback
+    example = PROJECT_DIR / "Resume.example.md"
+    if example.exists():
+        return example
+
+    return None
+
+
+def is_split_mode(base_path: Path) -> bool:
+    """Check if we're using the new split mode (resume-base.md + projects/)."""
+    return base_path.name == "resume-base.md" and "<!-- PROJECTS -->" in base_path.read_text(encoding="utf-8")
+
+
+def generate(project_slugs: list[str] | None = None) -> None:
+    """Generate Resume.html from base + selected projects."""
+    base_path = locate_base_md()
+
+    if not base_path or not base_path.exists():
+        print("ERROR: No resume source found.")
         print("Options:")
-        print("  1. Create ~/.local/resume/Resume.md with your real resume")
-        print("  2. Set RESUME_PATH=/path/to/your/Resume.md")
-        print("  3. Copy Resume.example.md to Resume.md for testing")
+        print("  1. Create dist/resume-base.md + dist/projects/ for split mode")
+        print("  2. Create ~/.local/resume/Resume.md for old single-file mode")
+        print("  3. Set RESUME_PATH=/path/to/your/Resume.md")
         sys.exit(1)
 
-    print(f"Using resume: {RESUME_MD}")
+    css_path = PROJECT_DIR / "resume.css"
 
-    md_content = RESUME_MD.read_text(encoding="utf-8")
+    print(f"Source: {base_path}")
+
+    if is_split_mode(base_path):
+        available = {p.stem: p for p in list_projects()}
+
+        if project_slugs is None:
+            # Default: include all projects
+            project_slugs = list(available.keys())
+
+        # Validate slugs
+        for slug in project_slugs:
+            if slug not in available:
+                print(f"WARNING: Project '{slug}' not found. Available: {', '.join(available.keys())}")
+
+        valid_slugs = [s for s in project_slugs if s in available]
+
+        if not valid_slugs:
+            print("ERROR: No valid projects selected.")
+            sys.exit(1)
+
+        print(f"Projects: {', '.join(valid_slugs)}")
+
+        md_content = assemble_resume(base_path, valid_slugs)
+    else:
+        # Old single-file mode
+        if project_slugs is not None:
+            print("WARNING: --projects is ignored in single-file mode. Use split mode (dist/resume-base.md).")
+        md_content = base_path.read_text(encoding="utf-8")
+
     md_content = preprocess_md(md_content)
 
     html_body = markdown(
@@ -135,9 +219,7 @@ def generate() -> None:
         output_format="html5",
     )
 
-    resume_css = load_css(CSS_FILE) if CSS_FILE.exists() else ""
-
-    google_fonts = ""
+    resume_css = load_css(css_path) if css_path.exists() else ""
 
     base_css = """html {
     overflow-x: initial !important;
@@ -179,7 +261,7 @@ ul, ol {
 }"""
 
     output = TEMPLATE.format(
-        fonts=google_fonts,
+        fonts="",
         base_css=base_css,
         resume_css=resume_css,
         content=html_body,
@@ -188,15 +270,49 @@ ul, ol {
     DIST_DIR.mkdir(exist_ok=True)
     resume_html = DIST_DIR / "Resume.html"
     resume_html.write_text(output, encoding="utf-8")
+    print(f"Generated {resume_html}")
 
-    # Copy source markdown to dist if it came from outside
-    if RESUME_MD.parent != DIST_DIR:
-        resume_md_copy = DIST_DIR / "Resume.md"
-        resume_md_copy.write_text(RESUME_MD.read_text(encoding="utf-8"))
-        print(f"✓ Copied source to {resume_md_copy}")
 
-    print(f"✓ Generated {resume_html}")
+def cmd_list_projects() -> None:
+    """List available project files with their titles."""
+    projects = list_projects()
+    if not projects:
+        print("No projects found in dist/projects/")
+        print("Add .md files under dist/projects/ — one per project.")
+        return
+
+    print(f"Available projects ({len(projects)}):")
+    for p in projects:
+        title = get_project_title(p)
+        print(f"  {p.stem:30s} → {title}")
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Generate resume HTML from Markdown source.")
+    parser.add_argument(
+        "--projects", "-p",
+        type=str,
+        default=None,
+        help="Comma-separated project slugs to include (e.g., 'gitlab-ci,chip-review'). "
+             "Omit to include all projects.",
+    )
+    parser.add_argument(
+        "--list-projects", "-l",
+        action="store_true",
+        help="List available project files and exit.",
+    )
+    args = parser.parse_args()
+
+    if args.list_projects:
+        cmd_list_projects()
+        return
+
+    slugs = None
+    if args.projects:
+        slugs = [s.strip() for s in args.projects.split(",") if s.strip()]
+
+    generate(slugs)
 
 
 if __name__ == "__main__":
-    generate()
+    main()
