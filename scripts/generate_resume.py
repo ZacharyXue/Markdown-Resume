@@ -87,10 +87,10 @@ def preprocess_md(text: str) -> str:
 
 
 def list_projects() -> list[Path]:
-    """Return sorted list of available project .md files."""
+    """Return sorted list of available project .md files (recursive)."""
     if not PROJECTS_DIR.exists():
         return []
-    return sorted(PROJECTS_DIR.glob("*.md"))
+    return sorted(PROJECTS_DIR.glob("**/*.md"))
 
 
 def get_project_title(project_path: Path) -> str:
@@ -107,17 +107,18 @@ def assemble_resume(base_path: Path, project_slugs: list[str]) -> str:
     """Assemble full resume from base + selected projects."""
     base_content = base_path.read_text(encoding="utf-8")
 
-    # Build project section content
-    project_section = []
-    available = {p.stem: p for p in list_projects()}
+    # Build slug → path map (slug = relative path from PROJECTS_DIR, no .md)
+    available = {}
+    for p in list_projects():
+        rel = p.relative_to(PROJECTS_DIR)
+        available[str(rel.with_suffix(""))] = p
 
+    project_section = []
     for slug in project_slugs:
         proj_path = available.get(slug)
         if proj_path:
             project_section.append(proj_path.read_text(encoding="utf-8").rstrip())
 
-    # Replace <!-- PROJECTS --> marker with project content
-    # If all selected, also show which were included in verbose mode
     assembled = base_content.replace("<!-- PROJECTS -->", "\n\n".join(project_section))
 
     return assembled
@@ -185,18 +186,20 @@ def generate(project_slugs: list[str] | None = None) -> None:
     print(f"Source: {base_path}")
 
     if is_split_mode(base_path):
-        available = {p.stem: p for p in list_projects()}
+        # Build slug → path map
+        available_slugs = {}
+        for p in list_projects():
+            rel = p.relative_to(PROJECTS_DIR)
+            available_slugs[str(rel.with_suffix(""))] = p
 
         if project_slugs is None:
-            # Default: include all projects
-            project_slugs = list(available.keys())
+            project_slugs = list(available_slugs.keys())
 
-        # Validate slugs
         for slug in project_slugs:
-            if slug not in available:
-                print(f"WARNING: Project '{slug}' not found. Available: {', '.join(available.keys())}")
+            if slug not in available_slugs:
+                print(f"WARNING: Project '{slug}' not found. Available: {', '.join(available_slugs.keys())}")
 
-        valid_slugs = [s for s in project_slugs if s in available]
+        valid_slugs = [s for s in project_slugs if s in available_slugs]
 
         if not valid_slugs:
             print("ERROR: No valid projects selected.")
@@ -274,17 +277,20 @@ ul, ol {
 
 
 def cmd_list_projects() -> None:
-    """List available project files with their titles."""
+    """List available project files with their titles and subdirectories."""
     projects = list_projects()
     if not projects:
         print("No projects found in dist/projects/")
         print("Add .md files under dist/projects/ — one per project.")
+        print("Use subdirectories to organize by company or category.")
         return
 
     print(f"Available projects ({len(projects)}):")
     for p in projects:
+        rel = p.relative_to(PROJECTS_DIR)
+        slug = str(rel.with_suffix(""))
         title = get_project_title(p)
-        print(f"  {p.stem:30s} → {title}")
+        print(f"  {slug:40s} → {title}")
 
 
 def main():
