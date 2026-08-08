@@ -3,26 +3,19 @@
 ## 隐私设计
 
 - **公开仓库**：只含脚本、样式、模板（`Resume.example.md`），**不含任何真实个人信息**。
-- **真实简历**：存放在 `dist/`（gitignored），基本信息在 `dist/resume-base.md`，项目经历在 `dist/projects/*.md`。
-- **版本备份**：`~/.local/resume/` 是独立私有 git 仓库。
+- **真实简历**：存放在 `dist/`（父仓库 gitignored）。
+- **版本管理**：`dist/` 本身是一个独立的私有 git 仓库，不推送到远程，无远端连接。
 - **构建产物**：输出到 `dist/`（gitignored，不提交）。
 
-## 内容源（拆分模式，推荐）
+## 内容源（拆分模式）
 
 | 优先级 | 路径 | 用途 |
 |--------|------|------|
 | 1 | `dist/resume-base.md` | **基本信息**（头/教育/工作/技能），`<!-- PROJECTS -->` 为项目注入点 |
-| 2 | `dist/projects/*.md` | **项目经历**（一个项目一个文件） |
+| 2 | `dist/projects/` | **项目经历**，按公司分目录，一个项目一个 `.md` |
 | 3 | `Resume.example.md` | 公开脱敏模板（fallback） |
 
 `RESUME_PATH` 环境变量可强制指定源文件（兼容旧单文件模式）。
-
-### 向后兼容（旧单文件模式）
-
-如果没有 `dist/resume-base.md`，脚本自动回退到：
-1. `dist/Resume.md`（旧格式单文件）
-2. `~/.local/resume/Resume.md`
-3. `Resume.example.md`
 
 ## 工作流
 
@@ -31,21 +24,16 @@
 vim dist/resume-base.md
 
 # 2. 编辑/新增项目
-vim dist/projects/my-project.md     # 格式见下方"项目文件格式"
+vim dist/projects/bytedance/my-project.md
 
 # 3. 查看可用项目
 python scripts/generate_resume.py --list-projects
 
-# 4. 构建 HTML（全部项目）
-python scripts/generate_resume.py
+# 4. 构建 HTML
+python scripts/generate_resume.py -p bytedance/gitlab-ci-platform,bytedance/chip-deployment
 
-# 4b. 构建 HTML（指定项目）
-python scripts/generate_resume.py -p gitlab-ci-platform,chip-review-testing
-# → 输出 dist/Resume.html
-
-# 5. 版本管理
-cp dist/resume-base.md dist/projects/ ~/.local/resume/
-cd ~/.local/resume && git commit -am "update resume"
+# 5. 版本管理（dist/ 是独立 git 仓库，本地私有）
+cd dist && git add -A && git commit -m "update: xxx"
 ```
 
 ## 项目文件格式
