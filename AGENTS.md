@@ -30,7 +30,7 @@ vim dist/projects/bytedance/my-project.md
 python scripts/generate_resume.py --list-projects
 
 # 4. 构建 HTML
-python scripts/generate_resume.py -p bytedance/gitlab-ci-platform,bytedance/chip-deployment
+python scripts/generate_resume.py -p bytedance/gitlab-ci-platform,bytedance/model-testing-deployment
 
 # 5. 版本管理（dist/ 是独立 git 仓库，本地私有）
 cd dist && git add -A && git commit -m "update: xxx"
