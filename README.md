@@ -1,6 +1,3 @@
-
-<img src="./Resume.png">
-
 ## 快速开始
 
 ```bash
