@@ -4,7 +4,7 @@
 
 - **公开仓库**：只含脚本、样式、模板（`Resume.example.md`），**不含任何真实个人信息**。
 - **真实简历**：存放在 `dist/`（父仓库 gitignored）。
-- **版本管理**：`dist/` 本身是一个独立的私有 git 仓库，不推送到远程，无远端连接。
+- **版本管理**：`dist/` 本身是一个独立的私有 git 仓库，**不推送 GitHub 公开仓库**；仅与本机 ↔ 阿里云 ECS 之间的私有裸仓库双向同步（详见 `docs/RESUME_DIST_SYNC.md`）。
 - **构建产物**：输出到 `dist/`（gitignored，不提交）。
 
 ## 内容源（拆分模式）
@@ -32,8 +32,14 @@ python scripts/generate_resume.py --list-projects
 # 4. 构建 HTML
 python scripts/generate_resume.py -p bytedance/gitlab-ci-platform,bytedance/model-testing-deployment
 
-# 5. 版本管理（dist/ 是独立 git 仓库，本地私有）
-cd dist && git add -A && git commit -m "update: xxx"
+# 5. 版本管理（dist/ 是独立 git 仓库，本地私有，双机同步）
+cd dist && git add -A && git commit -m "update: xxx" && ./sync.sh push   # 推送到阿里云并同步远程副本
+
+# 6. 从阿里云拉取远程修改
+cd dist && ./sync.sh pull
+
+# 7. 查看两侧同步状态
+cd dist && ./sync.sh status
 ```
 
 ## 项目文件格式
@@ -69,6 +75,14 @@ python scripts/generate_resume.py -l          # 列出可用项目
 - `resume.css` — Typora 兼容样式表
 - `assets/` — SVG 图标
 - `scripts/generate_resume.py` — Markdown → HTML 转换，支持项目选择
+- `dist/sync.sh` — 双机同步脚本（dist 私有仓库内，本地 ⇄ 阿里云）
+
+## 文档索引
+
+| 文档 | 内容 | 何时读 |
+|------|------|--------|
+| `docs/RESUME_DIST_SYNC.md` | **dist 双机同步机制**（本地⇄阿里云 bare 仓库，`sync.sh` 用法，隐私边界） | 涉及 dist 推送/拉取/同步、或担心数据外泄时 |
+| `docs/BRIDGE.md` | PDF 导出工作流（Selenium+chromedriver 首选） | 需要生成/更新简历 PDF 时 |
 
 ## Hermes 技能
 
